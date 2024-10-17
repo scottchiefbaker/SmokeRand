@@ -1,45 +1,48 @@
 /**
- * @file alfib_shared.c
- * @brief A shared library that implements the additive
+ * @file alfib_mod_shared.c
+ * @brief A shared library that implements the modified additive
  * Lagged Fibbonaci generator \f$ LFib(2^{64}, 607, 273, +) \f$.
  * @details It uses the next recurrent formula:
+ *
  * \f[
- * X_{n} = X_{n - 607} + X_{n - 273}
+ *   Y_{n} = Y_{n - 607} + Y_{n - 273} \mod 2^{64}
  * \f]
- * and returns higher 32 bits. The initial values in the ring buffer
- * are filled by the 64-bit PCG generator.
  *
- * Fails bspace32_1d and gap_inv512 tests.
- * 
- * Sources of parameters:
+ * \f[
+ *   W_{n} = W_{n - 1} + \gamma \mod 2^{64}
+ * \f]
  *
- * 1. https://www.boost.org/doc/libs/master/boost/random/lagged_fibonacci.hpp
+ * \f[
+ *   X_{n} = Y_{n} XOR W_{n}
+ * \f]
+ *
+ * and returns either higher 32 bits (as unsigned integer) or higher
+ * 52 bits (as double). The initial values in the ring buffer are filled
+ * by the 64-bit PCG generator.
+ *
+ * It passes SmallCrush, Crush and BigCrush batteries. But fails PractRand
+ * at >1 TiB of data.
  *
  * @copyright (c) 2024 Alexey L. Voskov, Lomonosov Moscow State University.
  * alvoskov@gmail.com
  *
- * This software is licensed under the MIT license.
+ * All rights reserved.
+ *
+ * This software is provided under the Apache 2 License.
+ *
+ * In scientific publications which used this software, a reference to it
+ * would be appreciated.
  */
 #include "smokerand/cinterface.h"
 
 PRNG_CMODULE_PROLOG
 
-// Fails both birthday spacings and gap512 tests
 #define LFIB_A 607
 #define LFIB_B 273
 
-
-// Still fails birthday spacings test, gap512 is "suspiciuos"
-//#define LFIB_A 1279
-//#define LFIB_B 418
-
-// Still fails birthday spacings test, gap512 is passed
-//#define LFIB_A 2281
-//#define LFIB_B 1252
-
-
 typedef struct {
     uint64_t U[LFIB_A + 1]; ///< Ring buffer (U[0] is not used)
+    uint64_t w; ///< Weyl sequence
     int i;
     int j;
 } ALFib_State;
@@ -49,9 +52,10 @@ static uint64_t get_bits(void *state)
     ALFib_State *obj = state;
     uint64_t x = obj->U[obj->i] + obj->U[obj->j];
     obj->U[obj->i] = x;
+    obj->w += 0x9E3779B97F4A7C15;
     if(--obj->i == 0) obj->i = LFIB_A;
 	if(--obj->j == 0) obj->j = LFIB_A;
-    return x;
+    return x ^ obj->w;
 }
 
 static void *create(const CallerAPI *intf)
@@ -63,7 +67,8 @@ static void *create(const CallerAPI *intf)
         obj->U[k] = pcg_bits64(&state);
     }
     obj->i = LFIB_A; obj->j = LFIB_B;
+    obj->w = pcg_bits64(&state);
     return (void *) obj;
 }
 
-MAKE_UINT64_PRNG("ALFib", NULL)
+MAKE_UINT64_PRNG("ALFib_mod", NULL);
