@@ -1,8 +1,8 @@
 /**
- * @file mwc128_shared.c
- * @brief MWC128 - 128-bit PRNG based on MWC method.
- * @details Multiply-with-carry PRNG with a period about 2^127.
- * Passes SmallCrush, Crush and BigCrush tests.
+ * @file mwc128x_shared.c
+ * @brief MWC128X - 128-bit PRNG based on MWC method.
+ * @details Multiply-with-carry PRNG with a simple output function x ^ c.
+ * Has period about 2^127. Passes SmallCrush, Crush and BigCrush tests.
  * The MWC_A1 multiplier was found by S. Vigna.
  *
  * References:
@@ -27,7 +27,7 @@ PRNG_CMODULE_PROLOG
 typedef struct {
     uint64_t x;
     uint64_t c;
-} MWC128State;
+} MWC128XState;
 
 
 /**
@@ -36,7 +36,7 @@ typedef struct {
 static inline uint64_t get_bits_raw(void *state)
 {
     static const uint64_t MWC_A1 = 0xffebb71d94fcdaf9;
-    MWC128State *obj = state;
+    MWC128XState *obj = state;
 
 #ifdef UINT128_ENABLED
     const __uint128_t t = MWC_A1 * (__uint128_t)obj->x + obj->c;
@@ -47,13 +47,13 @@ static inline uint64_t get_bits_raw(void *state)
     obj->x = unsigned_mul128(MWC_A1, obj->x, &obj->c);
     obj->c += _addcarry_u64(0, obj->x, c_old, &obj->x);
 #endif
-    return obj->x;
+    return obj->x ^ obj->c;
 }
 
 
 static void *create(const CallerAPI *intf)
 {
-    MWC128State *obj = intf->malloc(sizeof(MWC128State));
+    MWC128XState *obj = intf->malloc(sizeof(MWC128XState));
     obj->x = intf->get_seed64();
     obj->c = 1;
     return (void *) obj;
@@ -62,8 +62,8 @@ static void *create(const CallerAPI *intf)
 
 static int run_self_test(const CallerAPI *intf)
 {
-    MWC128State obj = {.x = 12345, .c = 67890};
-    uint64_t u, u_ref = 0x72BD413ED8304C94;
+    MWC128XState obj = {.x = 12345, .c = 67890};
+    uint64_t u, u_ref = 0xDE4919065DBF6449;
     for (size_t i = 0; i < 1000000; i++) {
         u = get_bits_raw(&obj);
     }
@@ -72,4 +72,4 @@ static int run_self_test(const CallerAPI *intf)
 }
 
 
-MAKE_UINT64_PRNG("MWC128", run_self_test)
+MAKE_UINT64_PRNG("MWC128X", run_self_test)
