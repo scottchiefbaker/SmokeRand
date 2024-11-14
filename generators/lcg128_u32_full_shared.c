@@ -1,6 +1,7 @@
 /**
- * @file lcg128_full_shared.c
- * @brief Just 128-bit LCG with 128-bit multiplier. It is taken from:
+ * @file lcg128_u32_full_shared.c
+ * @brief Just 128-bit LCG with 128-bit multiplier and 32-bit output.
+ * It is taken from:
  *
  * Steele G.L., Vigna S. Computationally easy, spectrally good multipliers
  * for congruential pseudorandom number generators // Softw Pract Exper. 2022
@@ -16,11 +17,12 @@
 PRNG_CMODULE_PROLOG
 
 /**
- * @brief A cross-compiler implementation of 128-bit LCG.
+ * @brief A cross-compiler implementation of 128-bit LCG. Returns only upper
+ * 32 bits.
  */
 static inline uint64_t get_bits_raw(void *state)
 {
-    return Lcg128State_a128_iter(state, 0xdb36357734e34abb, 0x0050d0761fcdfc15, 1);
+    return Lcg128State_a128_iter(state, 0xdb36357734e34abb, 0x0050d0761fcdfc15, 1) >> 32;
 }
 
 
@@ -43,7 +45,7 @@ static int run_self_test(const CallerAPI *intf)
 #else
     Lcg128State obj = { .x_low = 1234567890, .x_high = 0 };
 #endif
-    uint64_t u, u_ref = 0x23fe67ffa50c941f;
+    uint64_t u, u_ref = 0x23fe67ff;// a50c941f;
     for (size_t i = 0; i < 1000000; i++) {
         u = get_bits_raw(&obj);
     }
@@ -52,4 +54,4 @@ static int run_self_test(const CallerAPI *intf)
 }
 
 
-MAKE_UINT64_PRNG("Lcg128", run_self_test)
+MAKE_UINT32_PRNG("Lcg128_u32", run_self_test)
