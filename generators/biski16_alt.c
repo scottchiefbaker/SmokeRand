@@ -1,5 +1,4 @@
 // https://github.com/danielcota/biski64/tree/main
-// 0/0/0/1
 #include "smokerand/cinterface.h"
 
 PRNG_CMODULE_PROLOG
@@ -23,7 +22,7 @@ static inline uint16_t Biski16State_get_bits(Biski16State *obj)
     uint16_t output = obj->mix + obj->loop_mix;
     uint16_t old_loop_mix = obj->loop_mix;
     obj->loop_mix = obj->ctr ^ obj->mix;
-    obj->mix = rotl16(obj->mix, 4) + rotl16(old_loop_mix, 9);
+    obj->mix = (obj->mix ^ rotl16(obj->mix, 4)) + rotl16(old_loop_mix, 9);
     obj->ctr += 0x9999;
     return output;
 }
