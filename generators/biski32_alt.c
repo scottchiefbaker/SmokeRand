@@ -5,17 +5,17 @@ Hamming weights distribution test (histogram)
   Sample size, values:     137438953472 (2^37.00 or 10^11.14)
   Blocks analysis results
         bits |        z          p |    z_xor      p_xor
-          32 |   -0.400      0.656 |   -0.080      0.532
-          64 |    1.165      0.122 |   -0.754      0.775
-         128 |   -0.396      0.654 |    8.256   7.54e-17
-         256 |   -0.711      0.762 |    4.613   1.99e-06
-         512 |    0.625      0.266 |   -0.012      0.505
-        1024 |    0.936      0.175 |    2.203     0.0138
-        2048 |   -0.429      0.666 |    0.611      0.271
-        4096 |   -1.041      0.851 |   -1.367      0.914
-        8192 |   -1.407       0.92 |   -0.811      0.791
-       16384 |    0.457      0.324 |   -0.099      0.539
-  Final: z =   8.256, p = 7.54e-17
+          32 |   -0.642       0.74 |   -0.182      0.572
+          64 |   -0.072      0.529 |   -0.126       0.55
+         128 |   -2.410      0.992 |   -0.669      0.748
+         256 |    0.809      0.209 |   -1.344      0.911
+         512 |    0.778      0.218 |   -0.304       0.62
+        1024 |    1.068      0.143 |    1.316     0.0941
+        2048 |    1.235      0.109 |   -0.930      0.824
+        4096 |   -0.349      0.636 |    0.482      0.315
+        8192 |    0.828      0.204 |   -0.803      0.789
+       16384 |   -1.058      0.855 |   -0.180      0.572
+  Final: z =  -2.410, p = 0.992
 */
 
 #include "smokerand/cinterface.h"
@@ -37,7 +37,7 @@ static inline uint64_t get_bits_raw(void *state)
     uint32_t output = obj->mix + obj->loop_mix;
     uint32_t old_loop_mix = obj->loop_mix;
     obj->loop_mix = obj->ctr ^ obj->mix;
-    obj->mix = rotl32(obj->mix, 8) + rotl32(old_loop_mix, 20);
+    obj->mix = (obj->mix ^ rotl32(obj->mix, 8)) + rotl32(old_loop_mix, 20);
     obj->ctr += 0x99999999;
     return output;
 }
@@ -52,4 +52,4 @@ static void *create(const CallerAPI *intf)
     return obj;
 }
 
-MAKE_UINT32_PRNG("biski32", NULL)
+MAKE_UINT32_PRNG("biski32_alt", NULL)
