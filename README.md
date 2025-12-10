@@ -24,7 +24,6 @@ Four primary batteries are implemented in SmokeRand:
   larger samples that make them more sensitive.
 - `full` - similar do default but uses larger samples.
 
-
  Battery | Number of tests | Bytes (32-bit PRNG) | Bytes (64-bit PRNG)
 ---------|-----------------|---------------------|---------------------
  express | 7               | 2^26                | 2^27
@@ -47,10 +46,6 @@ Integration with PractRand:
 Getting PRNG input from stdin (multithreading is not supported in this case):
 
     $ ./smokerand stdout generators/lcg64.so | ./smokerand express stdin32
-
-Integeration with TestU01 using the TestU01-threads plugin:
-
-    $ ./smokerand s=libtestu01th_sr_ext.so generators/lcg64.so --batparam=SmallCrush --threads
 
 ### 🧰 Other tools similar to SmokeRand:
 
